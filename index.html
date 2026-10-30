@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Mesh · Boston Engineering</title>
+  <meta name="description" content="Agent Mesh: permissioned AI workers on the machines you already have. Interactive demo prepared for Boston Engineering R&D.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2307090C'/%3E%3Ccircle cx='16' cy='9' r='3.2' fill='%233DD9C5'/%3E%3Ccircle cx='8' cy='22' r='3.2' fill='%233DD9C5'/%3E%3Ccircle cx='24' cy='22' r='3.2' fill='%233DD9C5'/%3E%3Cpath d='M16 9 8 22M16 9l8 13M8 22h16' stroke='%233DD9C5' stroke-width='1.6' fill='none' opacity='.6'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Agent Mesh home">
+      <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><circle cx="16" cy="8" r="3.4"/><circle cx="7" cy="23" r="3.4"/><circle cx="25" cy="23" r="3.4"/><path d="M16 8 7 23M16 8l9 15M7 23h18"/></svg>
+      <span>agent<b>mesh</b></span>
+    </a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#console">Console</a>
+      <a href="#deploy">Deploy</a>
+      <a href="#security">Security</a>
+      <a href="#models">Models</a>
+      <a href="#pilot">Pilot</a>
+    </nav>
+    <span class="prepared">Prepared for Boston Engineering · R&amp;D</span>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="eyebrow">Working name · demo for discussion · November 2026</div>
+      <h1>A first line of defense<br>that lives on <span class="hl">your</span> machines.</h1>
+      <p class="lede">Agent Mesh puts a small, permissioned worker on the robots, workstations and servers you choose. One supervisor works out where the evidence lives, sends the job there, and brings back an answer. The raw data stays put.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#console">Run the console</a>
+        <a class="btn" href="#security">How it stays safe</a>
+      </div>
+      <ul class="hero-facts">
+        <li><b>0 B</b><span>raw data copied off your machines</span></li>
+        <li><b>Leased</b><span>every step gets permissions that expire</span></li>
+        <li><b>Gated</b><span>writes and motion wait for a person</span></li>
+        <li><b>Any model</b><span>local, hosted, or your provider</span></li>
+      </ul>
+    </section>
+
+    <section class="console" id="console" aria-label="Mesh console">
+      <div class="console-bar">
+        <div class="scenarios" id="scenarios" role="tablist" aria-label="Scenarios"></div>
+        <div class="route" role="group" aria-label="Model routing">
+          <span class="eyebrow">Model</span>
+          <button data-act="route" data-route="local" aria-pressed="true">Local</button>
+          <button data-act="route" data-route="hosted" aria-pressed="false">Hosted</button>
+          <button data-act="route" data-route="provider" aria-pressed="false">Yours</button>
+        </div>
+      </div>
+
+      <div class="ask">
+        <div class="ask-q">
+          <span class="prompt-mark" aria-hidden="true">›</span>
+          <p id="askText"></p>
+        </div>
+        <div class="ask-controls">
+          <label class="toggle" id="injectWrap"><input type="checkbox" id="inject"><span class="switch" aria-hidden="true"></span><span>Inject a machine failure</span></label>
+          <button class="btn btn-primary" id="playBtn" data-act="play">Run</button>
+          <button class="btn" id="nextBtn" data-act="next">Step</button>
+          <button class="btn btn-ghost" id="resetBtn" data-act="reset">Reset</button>
+        </div>
+      </div>
+      <div class="ask-hints"><span id="injectHint"></span><span id="alwaysHint" class="always"></span><span id="routeNote" class="route-note"></span></div>
+
+      <div class="console-grid">
+        <div class="stage">
+          <svg id="mesh" class="mesh" role="img" aria-label="Mesh topology graph"></svg>
+          <div class="legend" aria-hidden="true">
+            <span><i class="lg lg-headed"></i>headed</span>
+            <span><i class="lg lg-headless"></i>headless</span>
+            <span><i class="lg lg-sub"></i>supervisor</span>
+            <span><i class="lg lg-lease"></i>lease out</span>
+            <span><i class="lg lg-result"></i>result back</span>
+            <span><i class="lg lg-off"></i>offline / denied</span>
+          </div>
+        </div>
+        <aside class="panel">
+          <div class="panel-tabs" role="tablist">
+            <button id="tabRun" role="tab" data-act="panel" data-tab="run" aria-selected="true">Run</button>
+            <button id="tabInspect" role="tab" data-act="panel" data-tab="inspect" aria-selected="false">Inspect node</button>
+          </div>
+          <ol class="steps" id="steps"></ol>
+          <div class="inspect" id="inspect" hidden></div>
+        </aside>
+      </div>
+
+      <div class="metrics" id="metrics"></div>
+
+      <div class="lower">
+        <div class="card">
+          <div class="card-head"><h3>Audit log</h3><span class="eyebrow">append-only · signed · exportable</span></div>
+          <div class="log" id="log" aria-live="polite"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Cloud agent vs. Agent Mesh</h3><span class="eyebrow">this scenario</span></div>
+          <div class="compare" id="compare"></div>
+        </div>
+      </div>
+      <p class="footnote">* Today's time is a working assumption from our robotics discovery calls, not a measurement. Mesh time is simulated.</p>
+    </section>
+
+    <section class="section" id="why">
+      <div class="section-head">
+        <div class="eyebrow">01 · Why this, why you</div>
+        <h2>The expensive part is figuring out what went wrong.</h2>
+      </div>
+      <div class="grid-3">
+        <article class="tile">
+          <div class="tile-k">Incident replay</div>
+          <p>Something odd happens in a test. Weeks later someone needs the minutes around it, lined up across code logs, sensor streams and video that live on different machines in different formats.</p>
+        </article>
+        <article class="tile">
+          <div class="tile-k">Thin links</div>
+          <p>Field vehicles and customer sites rarely have bandwidth to spare. The useful move is to send the summary first and leave the raw data where it was recorded.</p>
+        </article>
+        <article class="tile">
+          <div class="tile-k">Field triage</div>
+          <p>When a unit breaks on site, the person there often doesn't know the internals and calls HQ. A small team ends up doing engineering, support and field service at once.</p>
+        </article>
+      </div>
+      <p class="note">What we heard across our discovery calls with robotics engineers and operators, October 2026. Summarized at a general level.</p>
+
+      <div class="fit">
+        <div class="fit-col">
+          <div class="eyebrow">Where it could fit at Boston Engineering</div>
+          <ul class="ticks">
+            <li><b>Unmanned systems.</b> Underwater and field vehicles like BIOSwimmer log on board and come back to a dock with a thin link.</li>
+            <li><b>Connected products + AR.</b> IIoT telemetry and AR-guided service already run through your practice. A first answer could land in the tech's headset.</li>
+            <li><b>Regulated programs.</b> Defense and medical work means data stays inside program boundaries. The mesh respects them rather than asking you to move data out.</li>
+            <li><b>Senior engineer time.</b> Less time hunting for a CAN bitrate, more time on the problems you were hired for.</li>
+          </ul>
+        </div>
+        <div class="fit-col fit-quote">
+          <p>"Bring the agent to the data, not the data to the agent."</p>
+          <span>Our working thesis. We want to hear where it breaks for you.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="deploy">
+      <div class="section-head">
+        <div class="eyebrow">02 · What runs where</div>
+        <h2>Install a worker. It joins the graph.</h2>
+      </div>
+      <div class="deploy">
+        <ol class="flow">
+          <li><span class="flow-n">1</span><div><h4>Pick a master node</h4><p>The supervisor runs on a server or workstation inside your network. It plans, routes and keeps the capability graph. It never executes jobs itself.</p></div></li>
+          <li><span class="flow-n">2</span><div><h4>Add headed devices</h4><p>Workstations, rig PCs, Jetsons, Raspberry Pis and laptops run the full worker. Start with three. Linux and macOS first, Windows when a partner needs it.</p></div></li>
+          <li><span class="flow-n">3</span><div><h4>Reach headless devices</h4><p>MCUs, PLCs, power supplies, scopes and NAS boxes are reached through a nearby worker over serial, CAN, Modbus, SCPI or SSH. Nothing new is installed on them.</p></div></li>
+          <li><span class="flow-n">4</span><div><h4>Set permissions per node</h4><p>Each node gets standing ceilings for read, write, exec and actuate. Layer sites under sub-supervisors. Disconnected components, like an enclave, run their own mesh.</p></div></li>
+        </ol>
+        <div class="manifest">
+          <div class="manifest-head"><span>capability manifest</span><span>uuv-onboard.json</span></div>
+<pre><code>{
+  <span class="k">"node"</span>: <span class="s">"uuv-onboard"</span>,
+  <span class="k">"identity"</span>: <span class="s">"ed25519:9c1e…a4"</span>,
+  <span class="k">"head"</span>: <span class="s">"headless"</span>,
+  <span class="k">"parent"</span>: <span class="s">"dock-sub-supervisor"</span>,
+  <span class="k">"hardware"</span>: { <span class="k">"soc"</span>: <span class="s">"jetson-class"</span>, <span class="k">"ram_gb"</span>: <span class="num">16</span> },
+  <span class="k">"stack"</span>: [<span class="s">"ros2"</span>, <span class="s">"rosbag"</span>],
+  <span class="k">"capabilities"</span>: [<span class="s">"event-cut"</span>, <span class="s">"summarize"</span>, <span class="s">"mission-exec"</span>],
+  <span class="k">"data_indexes"</span>: [<span class="s">"/logs/trials"</span>],
+  <span class="k">"ceilings"</span>: {
+    <span class="k">"read"</span>: <span class="s">"trial logs"</span>,
+    <span class="k">"write"</span>: <span class="s">"/events only"</span>,
+    <span class="k">"actuate"</span>: <span class="s">"approval-required"</span>
+  },
+  <span class="k">"network"</span>: { <span class="k">"egress"</span>: <span class="s">"parent only"</span>, <span class="k">"link"</span>: <span class="s">"lte"</span> },
+  <span class="k">"heartbeat_s"</span>: <span class="num">1</span>
+}</code></pre>
+        </div>
+      </div>
+      <div class="pipeline">
+        <span>request</span><i></i><span>supervisor plans</span><i></i><span>capability graph</span><i></i><span class="pp-key">policy → lease</span><i></i><span>worker near the data</span><i></i><span>summary + audit</span>
+      </div>
+    </section>
+
+    <section class="section" id="security">
+      <div class="section-head">
+        <div class="eyebrow">03 · Security model</div>
+        <h2>The model proposes. Policy decides. You approve anything physical.</h2>
+      </div>
+      <div class="grid-3 sec">
+        <article class="tile"><div class="tile-k">Three identities</div><p><b>Node</b>: which machine. <b>Agent</b>: which worker is acting. <b>Lease</b>: what this one job may touch, for how long. No standing root access anywhere.</p></article>
+        <article class="tile"><div class="tile-k">Deterministic policy</div><p>A policy engine, not the LLM, checks access lists and issues every lease. A model can ask for more. It can't grant itself more.</p></article>
+        <article class="tile"><div class="tile-k">Read-only first</div><p>The first four weeks of a pilot are read-only. After that, writes are scoped and snapshotted, and anything that moves hardware waits for a named person.</p></article>
+        <article class="tile"><div class="tile-k">Data stays put</div><p>Workers return summaries and handles, not bulk copies. Raw logs, sonar and video stay on the machine that recorded them.</p></article>
+        <article class="tile"><div class="tile-k">Air-gap ready</div><p>A disconnected enclave runs its own supervisor with a local model. There is no bridge to it from outside, and the console shows that plainly.</p></article>
+        <article class="tile"><div class="tile-k">Audit + kill switch</div><p>Every lease, action, result and model call is logged append-only and exportable to your SIEM. One switch revokes every lease at once.</p></article>
+      </div>
+      <div class="honest">
+        <div class="honest-k">Plainly</div>
+        <p>We're an early team and we don't hold certifications yet. So the mesh is built to run <em>inside</em> the boundaries and controls you already operate, using your network, your accounts and your logs. Encrypted transport (WireGuard-style), mutual node identity, and nothing leaving your network unless you allow it.</p>
+      </div>
+    </section>
+
+    <section class="section" id="models">
+      <div class="section-head">
+        <div class="eyebrow">04 · Model routing</div>
+        <h2>Pick where the thinking happens.</h2>
+        <p class="sub">Where a model runs is chosen separately from where actions run. Switch it in the console above and watch the log.</p>
+      </div>
+      <div class="models">
+        <article class="model"><div class="model-k">Local</div><h4>On your hardware</h4><p>Open-weight model on the supervisor or the device. Works air-gapped. Nothing leaves your network.</p><span class="model-tag">most private</span></article>
+        <article class="model"><div class="model-k">Hosted</div><h4>Agent Mesh hosted</h4><p>Dedicated inference when you don't have the GPUs. No retention, under contract.</p><span class="model-tag">least setup</span></article>
+        <article class="model"><div class="model-k">Yours</div><h4>Your provider</h4><p>Point it at the enterprise endpoint you already approved, with your own keys and logs.</p><span class="model-tag">reuse approvals</span></article>
+      </div>
+    </section>
+
+    <section class="section" id="pilot">
+      <div class="section-head">
+        <div class="eyebrow">05 · A low-risk first step</div>
+        <h2>Twelve weeks. Three machines. One real incident.</h2>
+      </div>
+      <div class="timeline">
+        <div class="tl"><span class="tl-w">Week 0</span><h4>Install + agree metrics</h4><p>Three machines you pick. Success metrics written down on day one.</p></div>
+        <div class="tl"><span class="tl-w">Weeks 1–4</span><h4>Read-only triage</h4><p>Replay one real past incident. Search across machines. No writes, no motion.</p></div>
+        <div class="tl"><span class="tl-w">Weeks 5–8</span><h4>Replays on the right box</h4><p>Reruns on the right GPU. Scoped writes with snapshots, only if you want them.</p></div>
+        <div class="tl"><span class="tl-w">Weeks 9–12</span><h4>Measure + decide</h4><p>Time from failure to first answer, investigations closed, engineer hours back.</p></div>
+      </div>
+      <div class="ask-us">
+        <div>
+          <div class="eyebrow">What we'd ask of you</div>
+          <ul class="ticks"><li>A champion engineer who owns the pilot</li><li>30 minutes a week of feedback</li><li>One past incident we can replay in week 1</li></ul>
+        </div>
+        <div>
+          <div class="eyebrow">What we'd love to learn on the call</div>
+          <ul class="qs">
+            <li>When a vehicle misbehaves in a test, how long until someone knows why?</li>
+            <li>Where do logs, telemetry and video live today, and in what formats?</li>
+            <li>What can't leave which network, and who signs off?</li>
+            <li>Who gets the call when a field tech is stuck?</li>
+            <li>Which workflow would you trust us with first?</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-brand">agent<b>mesh</b> <span>· working name · Penn</span></div>
+    <p>Scenarios, machine names, figures and logs are illustrative examples for discussion. They do not describe Boston Engineering systems, programs, customers or data. Public company details are from Boston Engineering's own published materials.</p>
+  </footer>
+
+  <script src="js/scenarios.js"></script>
+  <script src="js/graph.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

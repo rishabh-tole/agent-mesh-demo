@@ -208,10 +208,13 @@ button:focus-visible, textarea:focus-visible, .n:focus-visible { outline: 2px so
 .card dd { margin: 0; color: var(--mute); }
 
 /* ---------- svg: zones ---------- */
-.zone rect { fill: rgba(255,255,255,0.012); stroke: var(--line2); stroke-width: 1; stroke-dasharray: 2 5; }
+.zone rect { fill: rgba(255,255,255,0.035); stroke: #6B6862; stroke-width: 1.6; stroke-dasharray: 7 5; }
+/* deployment-side zones get an orange edge so the two sites read as separate places */
+.zone[data-zone="field"] rect, .zone[data-zone="site"] rect { fill: rgba(255,107,0,0.05); stroke: var(--or-line); }
 .zone-gapped rect { stroke: var(--or); }
-.z-label { font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; fill: var(--dim); }
-.z-link { font-family: var(--mono); font-size: 12px; fill: var(--dim); }
+.z-label { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; fill: var(--ink); }
+.zone[data-zone="field"] .z-label, .zone[data-zone="site"] .z-label { fill: var(--or2); }
+.z-link { font-family: var(--mono); font-size: 12px; fill: var(--mute); }
 
 /* svg: edges */
 .edge { fill: none; stroke: var(--line2); stroke-width: 1.5; transition: stroke 0.3s; }

@@ -142,7 +142,8 @@
     function animateAlong(path, reverse, cls, ms) {
       return new Promise(function (resolve) {
         var len = path.getTotalLength();
-        var dot = el("circle", { "class": "packet " + cls, r: 5, filter: "url(#glow)" });
+        var p0 = path.getPointAtLength(reverse ? len : 0);
+        var dot = el("circle", { "class": "packet " + cls, r: 5, cx: p0.x, cy: p0.y, filter: "url(#glow)" });
         gPackets.appendChild(dot);
         if (reduced) { gPackets.removeChild(dot); resolve(); return; }
         var start = null;
@@ -162,14 +163,15 @@
 
     /**
      * Send a packet from the supervisor to `id` (direction "out") or back ("back").
+     * @param {number} [speed] playback multiplier, 1 = normal
      * @returns {Promise<void>}
      */
-    function travel(id, direction, cls) {
+    function travel(id, direction, cls, speed) {
       var ids = chain(id).slice(1);
       if (!ids.length) return Promise.resolve();
       var paths = ids.map(function (x) { return edges[x]; }).filter(Boolean);
       if (direction === "back") paths.reverse();
-      var per = Math.max(380, 820 / paths.length);
+      var per = Math.max(380, 820 / paths.length) / (speed || 1);
       return paths.reduce(function (p, path) {
         return p.then(function () {
           path.classList.add("edge-hot");

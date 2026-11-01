@@ -52,6 +52,16 @@
     var byId = {};
     scenario.nodes.forEach(function (n) { byId[n.id] = n; });
 
+    /** Root of a node's group: the supervisor, or the head of a group that is not on the mesh. */
+    function rootOf(id) {
+      var cur = byId[id];
+      while (cur.parent) cur = byId[cur.parent];
+      return cur.id;
+    }
+    var offMesh = {};
+    scenario.nodes.forEach(function (n) { if (byId[rootOf(n.id)].kind !== "supervisor") offMesh[n.id] = true; });
+    function zoneClass(z) { return "zone" + (z.gapped ? " zone-gapped" : "") + (z.deploy ? " zone-deploy" : ""); }
+
     var defs = el("defs", {});
     var glow = el("filter", { id: "glow", x: "-50%", y: "-50%", width: "200%", height: "200%" });
     glow.appendChild(el("feGaussianBlur", { stdDeviation: "4", result: "b" }));
@@ -64,7 +74,7 @@
 
     var gZones = el("g", { "class": "zones" });
     scenario.zones.forEach(function (z) {
-      var g = el("g", { "class": "zone" + (z.gapped ? " zone-gapped" : ""), "data-zone": z.id });
+      var g = el("g", { "class": zoneClass(z), "data-zone": z.id });
       g.appendChild(el("rect", { x: z.x, y: z.y, width: z.w, height: z.h, rx: 14 }));
       var label = el("text", { "class": "z-label", x: z.x + 16, y: z.y + 24 });
       label.textContent = z.label;
@@ -82,7 +92,7 @@
       if (!n.parent) return;
       var p = byId[n.parent];
       var d = edgePath(p, n);
-      var path = el("path", { "class": "edge" + (n.standby ? " edge-standby" : ""), d: d, "data-to": n.id });
+      var path = el("path", { "class": "edge" + (n.standby ? " edge-standby" : "") + (offMesh[n.id] ? " edge-off" : ""), d: d, "data-to": n.id });
       gEdges.appendChild(path);
       edges[n.id] = path;
       var label = scenario.edgeLabels && scenario.edgeLabels[n.id];
@@ -102,7 +112,7 @@
     scenario.nodes.forEach(function (n) {
       var r = radiusOf(n);
       var g = el("g", {
-        "class": "n n-" + (n.kind || "worker") + " n-" + n.head + (n.standby ? " is-standby" : ""),
+        "class": "n n-" + (n.kind || "worker") + " n-" + n.head + (n.standby ? " is-standby" : "") + (offMesh[n.id] ? " n-off" : ""),
         transform: "translate(" + n.x + "," + n.y + ")", tabindex: 0, role: "button",
         "aria-label": n.label + ", " + n.sub
       });
@@ -185,20 +195,20 @@
      * @param {string|null} selected
      */
     function setState(states, selected) {
-      var labels = { active: "WORKING", relay: "RELAYING", waiting: "NEEDS YOU", done: "DONE", offline: "OFFLINE", denied: "DENIED", unreachable: "NO PATH · BY DESIGN", rejoining: "REJOINING" };
+      var labels = { active: "WORKING", relay: "RELAYING", waiting: "NEEDS YOU", done: "DONE", offline: "OFFLINE", denied: "DENIED", unreachable: "NOT ON MESH", rejoining: "REJOINING" };
       scenario.nodes.forEach(function (n) {
         var s = states[n.id] || (n.standby ? "standby" : "idle");
         var grp = groups[n.id];
-        grp.g.setAttribute("class", "n n-" + (n.kind || "worker") + " n-" + n.head + " s-" + s + (selected === n.id ? " is-selected" : ""));
+        grp.g.setAttribute("class", "n n-" + (n.kind || "worker") + " n-" + n.head + " s-" + s + (offMesh[n.id] ? " n-off" : "") + (selected === n.id ? " is-selected" : ""));
         var quiet = (n.kind === "supervisor" && s === "done") || (s === "unreachable" && n.kind !== "sub");
         grp.badge.textContent = quiet ? "" : (labels[s] || "");
         var edge = edges[n.id];
-        if (edge) edge.setAttribute("class", "edge e-" + s + (n.standby && s === "standby" ? " edge-standby" : ""));
+        if (edge) edge.setAttribute("class", "edge e-" + s + (n.standby && s === "standby" ? " edge-standby" : "") + (offMesh[n.id] ? " edge-off" : ""));
       });
       scenario.zones.forEach(function (z) {
         var zoneEl = svg.querySelector('[data-zone="' + z.id + '"]');
         var hit = scenario.nodes.some(function (n) { return n.zone === z.id && (states[n.id] === "unreachable" || states[n.id] === "denied"); });
-        zoneEl.setAttribute("class", "zone" + (z.gapped ? " zone-gapped" : "") + (hit ? " zone-blocked" : ""));
+        zoneEl.setAttribute("class", zoneClass(z) + (hit ? " zone-blocked" : ""));
       });
     }
 
@@ -207,7 +217,13 @@
       return chain(id).slice(1, -1).filter(function (x) { return byId[x].kind === "sub"; });
     }
 
-    return { setState: setState, travel: travel, relaysFor: relaysFor, byId: byId };
+    /** Every node in the same group as `id` (same root). */
+    function groupOf(id) {
+      var root = rootOf(id);
+      return scenario.nodes.filter(function (n) { return rootOf(n.id) === root; }).map(function (n) { return n.id; });
+    }
+
+    return { setState: setState, travel: travel, relaysFor: relaysFor, groupOf: groupOf, byId: byId };
   }
 
   window.MeshGraph = { mount: mount };

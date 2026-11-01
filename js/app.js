@@ -162,8 +162,9 @@
   }
 
   function finishRow(li, step) {
-    li.className = "row done";
-    li.querySelector(".r-st").innerHTML = step.ret ? '<span class="kb">' + fmtKB(step.ret) + '</span>✓' : "✓";
+    li.className = "row " + (step.unreachable ? "blocked" : "done");
+    li.querySelector(".r-st").innerHTML = step.unreachable ? '<span class="skip">skipped</span>'
+      : step.ret ? '<span class="kb">' + fmtKB(step.ret) + '</span>✓' : "✓";
     li.querySelector(".r-out").textContent = step.out;
     scrollChat();
   }
@@ -235,17 +236,46 @@
     return step.node;
   }
 
+  /** A group that is not on the mesh: nothing is sent, the whole group is marked. */
+  async function doUnreachable(step, li, token) {
+    st.graph.groupOf(step.node).forEach(function (id) { setNode(id, "unreachable"); });
+    paint();
+    rowEvent(li, "bad", "⛔ No connection to this mesh, by design. Nothing was sent.");
+    await wait(BASE.failWait, token);
+  }
+
+  /** A machine that dropped earlier comes back: heartbeat, ping out and back, then healthy. */
+  async function doRevive(step, li, token) {
+    setNode(step.node, "rejoining");
+    paint();
+    var ev = rowEvent(li, "heal", "↻ Heartbeat detected · reconnecting");
+    await wait(BASE.retry * 2, token);
+    var relays = await travelOut(step.node, token);
+    await st.graph.travel(step.node, "back", "p-back", st.speed);
+    guard(token);
+    ev.textContent = "✓ Back online. Rejoined the mesh.";
+    setNode(step.node, "done");
+    relays.forEach(function (r) { setNode(r, "done"); });
+    st.machines[step.node] = true;
+  }
+
   async function doStep(step, list, token) {
     var li = traceRow(list, step);
     var node = st.graph.byId[step.node];
-    setNode(step.node, "active");
-    paint();
 
-    if (node.kind === "supervisor") {
+    if (step.unreachable) {
+      await doUnreachable(step, li, token);
+    } else if (step.revive) {
+      await doRevive(step, li, token);
+    } else if (node.kind === "supervisor") {
+      setNode(step.node, "active");
+      paint();
       await wait(BASE.plan, token);
       setNode(step.node, "done");
       st.machines[step.node] = true;
     } else {
+      setNode(step.node, "active");
+      paint();
       st.leases += step.lease ? 1 : 0;
       renderMeters();
       var relays = await travelOut(step.node, token);
@@ -272,7 +302,7 @@
     var next = {};
     Object.keys(st.states).forEach(function (k) {
       var s = st.states[k];
-      next[k] = s === "offline" ? "offline" : "idle";
+      next[k] = s === "offline" || s === "unreachable" ? s : "idle";
     });
     st.states = next;
     paint();

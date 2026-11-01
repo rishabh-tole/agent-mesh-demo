@@ -60,7 +60,7 @@ button:focus-visible, textarea:focus-visible, .n:focus-visible { outline: 2px so
   display: grid;
   grid-template-columns: minmax(360px, 430px) 1fr;
   min-height: 0;
-  height: calc(100vh - 52px - 34px);
+  height: calc(100vh - 52px);
 }
 
 /* ---------- chat ---------- */
@@ -108,6 +108,9 @@ button:focus-visible, textarea:focus-visible, .n:focus-visible { outline: 2px so
 .row::before { content: ""; position: absolute; left: -5px; top: 15px; width: 8px; height: 8px; background: var(--bg2); border: 2px solid var(--line2); }
 .row.running::before { border-color: var(--or); background: var(--or); box-shadow: 0 0 0 4px var(--or-soft); }
 .row.done::before { border-color: var(--or); background: var(--bg2); }
+.row.blocked::before { border-color: var(--bad); background: var(--bg2); }
+.row.blocked .tag { border-color: rgba(255,59,48,0.6); color: #FF6B61; }
+.r-st .skip { color: #FF6B61; text-transform: uppercase; letter-spacing: 0.06em; font-size: 11px; }
 .r-head { display: flex; align-items: center; gap: 8px; }
 .tag { font: 700 10px var(--mono); padding: 2px 5px; border: 1px solid var(--line2); color: var(--mute); letter-spacing: 0.05em; flex: none; }
 .row.running .tag { border-color: var(--or); color: var(--or); }
@@ -191,6 +194,8 @@ button:focus-visible, textarea:focus-visible, .n:focus-visible { outline: 2px so
 .lg-c { border-radius: 50%; }
 .lg-p { width: 8px; height: 8px; border: 0; border-radius: 50%; background: var(--or); }
 .lg-r { width: 8px; height: 8px; border: 0; border-radius: 50%; background: var(--ink); }
+.lg-z { width: 14px; height: 10px; border: 1.5px dashed var(--or-line); background: rgba(255,107,0,0.08); }
+.lg-off { width: 14px; height: 10px; border: 1.5px dashed rgba(255,59,48,0.7); background: rgba(255,59,48,0.06); }
 
 /* node spec card */
 .card {
@@ -210,10 +215,13 @@ button:focus-visible, textarea:focus-visible, .n:focus-visible { outline: 2px so
 /* ---------- svg: zones ---------- */
 .zone rect { fill: rgba(255,255,255,0.035); stroke: #6B6862; stroke-width: 1.6; stroke-dasharray: 7 5; }
 /* deployment-side zones get an orange edge so the two sites read as separate places */
-.zone[data-zone="field"] rect, .zone[data-zone="site"] rect { fill: rgba(255,107,0,0.05); stroke: var(--or-line); }
-.zone-gapped rect { stroke: var(--or); }
+.zone-deploy rect { fill: rgba(255,107,0,0.05); stroke: var(--or-line); }
+/* a site with no connection to the mesh: cut-off look, red edge */
+.zone-gapped rect { fill: rgba(255,59,48,0.035); stroke: rgba(255,59,48,0.6); stroke-dasharray: 3 6; }
+.zone-gapped .z-label, .zone-gapped .z-link { fill: #FF6B61; }
+.zone-blocked rect { stroke: var(--bad); stroke-opacity: 1; }
 .z-label { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: 0.14em; fill: var(--ink); }
-.zone[data-zone="field"] .z-label, .zone[data-zone="site"] .z-label { fill: var(--or2); }
+.zone-deploy .z-label { fill: var(--or2); }
 .z-link { font-family: var(--mono); font-size: 12px; fill: var(--mute); }
 
 /* svg: edges */
@@ -258,9 +266,17 @@ button:focus-visible, textarea:focus-visible, .n:focus-visible { outline: 2px so
 .s-offline .n-body { fill: #1E0705; stroke: var(--bad); stroke-dasharray: 4 3; }
 .s-offline .n-badge, .s-offline .n-glyph { fill: var(--bad); }
 .n-supervisor.s-idle .n-halo { fill: rgba(255,107,0,0.07); }
+.n-off { opacity: 0.6; }
+.n-off .n-body { stroke-dasharray: 3 3; }
+.n-off .n-orbit { stroke: rgba(255,59,48,0.3); }
+.edge.edge-off { stroke: #4A4744; stroke-dasharray: 2 4; }
+.s-unreachable { opacity: 0.75; }
+.s-unreachable .n-body { fill: #1E0705; stroke: var(--bad); }
+.s-unreachable .n-badge, .s-unreachable .n-glyph { fill: var(--bad); }
+.s-rejoining .n-halo { fill: rgba(255,138,51,0.22); animation: pulse 0.7s ease-in-out infinite; }
+.s-rejoining .n-ring { stroke: var(--or2); stroke-dasharray: 2 5; animation: spin 1.2s linear infinite; }
 .n-ring { transform-box: fill-box; transform-origin: center; }
 
-.foot { height: 34px; display: flex; align-items: center; padding: 0 20px; border-top: 1px solid var(--line); font: 400 11.5px var(--mono); color: var(--dim); }
 
 @keyframes flow { to { stroke-dashoffset: -24; } }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -290,5 +306,4 @@ button:focus-visible, textarea:focus-visible, .n:focus-visible { outline: 2px so
   .ph { padding: 0 12px; font-size: 13px; }
   .legend .tip { margin-left: 0; }
   .empty h1 { font-size: 34px; }
-  .foot { height: auto; padding: 8px 16px; }
 }
